@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProResume | Modern ATS-Friendly Resume Builder</title>
+    
+    <!-- Google Fonts for Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- html2pdf for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        primary: '#4f46e5',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Premium Form Inputs */
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background-color: #ffffff;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .form-input::placeholder { color: #94a3b8; }
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        /* Layout Button Styles */
+        .layout-btn {
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background: white;
+            color: #475569;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .layout-btn:hover { border-color: #cbd5e1; background: #f8fafc; }
+        .layout-btn.active {
+            border-color: #6366f1;
+            background: #eff6ff;
+            color: #4f46e5;
+        }
+
+        /* Color Button Styles */
+        .color-btn {
+            width: 2rem; height: 2rem;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .color-btn.active { box-shadow: 0 0 0 3px white, 0 0 0 5px currentColor; }
+
+        /* Resume A4 Canvas */
+        .a4-canvas {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            margin: 0 auto;
+            position: relative;
+            transform-origin: top center;
+            overflow: hidden; /* Keep content contained in design */
+        }
+
+        /* Responsive Canvas Scaling */
+        @media (max-width: 1024px) {
+            .a4-canvas { transform: scale(0.85); margin-bottom: -40mm; }
+        }
+        @media (max-width: 768px) {
+            .a4-canvas { transform: scale(0.45); margin-top: -10mm; margin-bottom: -150mm; }
+        }
+        @media (max-width: 480px) {
+            .a4-canvas { transform: scale(0.40); margin-top: -15mm; margin-bottom: -160mm; }
+        }
+
+        /* Print styles */
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .a4-canvas { box-shadow: none; transform: none; width: 210mm; height: 297mm; margin: 0; }
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+    <!-- Top Navigation -->
+    <nav class="bg-white px-6 py-4 flex justify-between items-center shrink-0 z-10 shadow-[0_1px_3px_rgba(0,0,0,0.05)] no-print relative">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 text-white p-2 rounded-xl shadow-sm">
+                <i class="fa-solid fa-layer-group text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900 tracking-tight leading-none">ProResume</h1>
+                <span class="text-xs text-indigo-600 font-semibold tracking-wider uppercase">Premium Builder</span>
+            </div>
+        </div>
+        
+        <button onclick="downloadPDF()" class="bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2 transform hover:-translate-y-0.5">
+            <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">Export PDF</span>
+        </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative bg-gray-50/50">
+        
+        <!-- LEFT PANEL: Editor Form -->
+        <section id="editor-panel" class="w-full md:w-[45%] lg:w-[40%] h-full overflow-y-auto border-r border-gray-200 p-4 sm:p-6 pb-24 md:pb-6 custom-scrollbar">
+            
+            <div class="max-w-xl mx-auto space-y-6">
+                
+                <!-- Card: Design Settings (Themes & Colors) -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h2 class="text-lg font-bold mb-5 text-gray-800 flex items-center"><i class="fa-solid fa-wand-magic-sparkles mr-2 text-indigo-500"></i> Design & Template</h2>
+                    
+                    <div class="mb-5">
+                        <label class="form-label text-gray-500 uppercase tracking-wider text-xs mb-3">1. Select Layout</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <button onclick="updateLayout('classic')" id="btn-layout-classic" class="layout-btn active">Classic Split</button>
+                            <button onclick="updateLayout('executive')" id="btn-layout-executive" class="layout-btn">Executive Side</button>
+                            <button onclick="updateLayout('minimalist')" id="btn-layout-minimalist" class="layout-btn">Minimalist</button>
+                            <button onclick="updateLayout('creative')" id="btn-layout-creative" class="layout-btn">Creative Edge</button>
+                            <button onclick="updateLayout('elegant')" id="btn-layout-elegant" class="layout-btn font-serif">Elegant Centered</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label text-gray-500 uppercase tracking-wider text-xs mb-3">2. Choose Accent Color</label>
+                        <div class="flex flex-wrap gap-4 px-1 pb-1">
+                            <button onclick="updateColor('#4f46e5')" class="color-btn active bg-indigo-600 text-indigo-600"></button>
+                            <button onclick="updateColor('#0ea5e9')" class="color-btn bg-sky-500 text-sky-500"></button>
+                            <button onclick="updateColor('#10b981')" class="color-btn bg-emerald-500 text-emerald-500"></button>
+                            <button onclick="updateColor('#f43f5e')" class="color-btn bg-rose-500 text-rose-500"></button>
+                            <button onclick="updateColor('#f59e0b')" class="color-btn bg-amber-500 text-amber-500"></button>
+                            <button onclick="updateColor('#334155')" class="color-btn bg-slate-700 text-slate-700"></button>
+                            <button onclick="updateColor('#000000')" class="color-btn bg-black text-black"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card: Personal Info -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h2 class="text-lg font-bold mb-5 text-gray-800 flex items-center"><i class="fa-solid fa-user-tie mr-2 text-indigo-500"></i> Personal Info</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="col-span-full">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="inp-name" class="form-input" placeholder="e.g. Sarah Connor" oninput="renderResume()">
+                        </div>
+                        <div class="col-span-full">
+                            <label class="form-label">Professional Title</label>
+                            <input type="text" id="inp-title" class="form-input" placeholder="e.g. Product Designer" oninput="renderResume()">
+                        </div>
+                        <div>
+                            <label class="form-label">Email</label>
+                            <input type="email" id="inp-email" class="form-input" placeholder="sarah@example.com" oninput="renderResume()">
+                        </div>
+                        <div>
+                            <label class="form-label">Phone</label>
+                            <input type="text" id="inp-phone" class="form-input" placeholder="+1 234 567 890" oninput="renderResume()">
+                        </div>
+                        <div class="col-span-full">
+                            <label class="form-label">Location</label>
+                            <input type="text" id="inp-location" class="form-input" placeholder="San Francisco, CA" oninput="renderResume()">
+                        </div>
+                        <div>
+                            <label class="form-label">LinkedIn (Optional)</label>
+                            <input type="text" id="inp-linkedin" class="form-input" placeholder="linkedin.com/in/sarah" oninput="renderResume()">
+                        </div>
+                        <div>
+                            <label class="form-label">Website (Optional)</label>
+                            <input type="text" id="inp-website" class="form-input" placeholder="sarahconnor.design" oninput="renderResume()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card: Summary -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h2 class="text-lg font-bold mb-5 text-gray-800 flex items-center"><i class="fa-solid fa-align-left mr-2 text-indigo-500"></i> Professional Summary</h2>
+                    <textarea id="inp-summary" rows="4" class="form-input resize-none" placeholder="Write a compelling professional summary..." oninput="renderResume()"></textarea>
+                </div>
+
+                <!-- Card: Experience -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 class="text-lg font-bold text-gray-800 flex items-center"><i class="fa-solid fa-briefcase mr-2 text-indigo-500"></i> Experience</h2>
+                        <button onclick="addExperience()" class="text-sm bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-semibold transition-colors">+ Add</button>
+                    </div>
+                    <div id="experience-list" class="space-y-4"></div>
+                </div>
+
+                <!-- Card: Education -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 class="text-lg font-bold text-gray-800 flex items-center"><i class="fa-solid fa-graduation-cap mr-2 text-indigo-500"></i> Education</h2>
+                        <button onclick="addEducation()" class="text-sm bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-semibold transition-colors">+ Add</button>
+                    </div>
+                    <div id="education-list" class="space-y-4"></div>
+                </div>
+
+                <!-- Card: Skills -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 class="text-lg font-bold text-gray-800 flex items-center"><i class="fa-solid fa-code mr-2 text-indigo-500"></i> Skills</h2>
+                        <button onclick="addSkill()" class="text-sm bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-semibold transition-colors">+ Add</button>
+                    </div>
+                    <div id="skills-list" class="grid grid-cols-1 gap-2"></div>
+                </div>
+
+                <!-- Card: Certificates -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 class="text-lg font-bold text-gray-800 flex items-center"><i class="fa-solid fa-award mr-2 text-indigo-500"></i> Certifications</h2>
+                        <button onclick="addCertificate()" class="text-sm bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-semibold transition-colors">+ Add</button>
+                    </div>
+                    <div id="certificates-list" class="space-y-4"></div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: Live Resume Preview -->
+        <section id="preview-panel" class="hidden md:flex w-full md:w-[55%] lg:w-[60%] bg-gray-200/50 h-full overflow-y-auto p-4 sm:p-8 custom-scrollbar justify-center">
+            
+            <!-- A4 Page Container (Dynamically injected based on theme) -->
+            <div id="print-area" class="a4-canvas">
+                <!-- Content handled by JS renderers -->
+            </div>
+
+        </section>
+
+        <!-- Mobile Bottom Tab Bar -->
+        <div class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] z-50 flex p-3 px-4 gap-2 pb-6">
+            <button id="btn-edit" onclick="switchView('form')" class="flex-1 py-3 text-sm font-bold text-indigo-600 bg-indigo-50 rounded-xl border border-indigo-200 transition-all">
+                <i class="fa-solid fa-pen-to-square mr-1"></i> Editor
+            </button>
+            <button id="btn-preview" onclick="switchView('preview')" class="flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-50 rounded-xl border border-transparent transition-all">
+                <i class="fa-solid fa-eye mr-1"></i> Preview
+            </button>
+        </div>
+    </main>
+
+    <script>
+        // --- Application State ---
+        let state = {
+            layout: 'classic',
+            color: '#4f46e5',
+            experience: [],
+            education: [],
+            skills: [],
+            certificates: []
+        };
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            addExperience();
+            addEducation();
+            addSkill();
+            addSkill();
+            addSkill(); // add a few empty skill slots
+            addCertificate();
+            
+            // Set dummy data for initial beautiful view
+            document.getElementById('inp-name').value = "Alex Carter";
+            document.getElementById('inp-title').value = "Senior Software Engineer";
+            document.getElementById('inp-email').value = "hello@alexcarter.dev";
+            document.getElementById('inp-phone').value = "+1 (555) 123-4567";
+            document.getElementById('inp-location').value = "New York, NY";
+            document.getElementById('inp-summary').value = "Innovative and detail-oriented Software Engineer with over 6 years of experience in full-stack development. Proven ability to architect scalable systems, lead agile teams, and optimize performance. Passionate about creating seamless user experiences and writing clean, maintainable code.";
+            
+            updateExpState(state.experience[0].id, 'title', 'Lead Developer');
+            updateExpState(state.experience[0].id, 'company', 'TechNova Solutions');
+            updateExpState(state.experience[0].id, 'date', '2020 - Present');
+            updateExpState(state.experience[0].id, 'desc', "Spearheaded the migration to a microservices architecture, improving system scalability by 40%.\nMentored a team of 5 junior developers, conducting code reviews and technical workshops.\nDeveloped a high-traffic e-commerce portal handling 10k+ daily transactions.");
+
+            updateEduState(state.education[0].id, 'degree', 'B.S. in Computer Science');
+            updateEduState(state.education[0].id, 'school', 'University of Technology');
+            updateEduState(state.education[0].id, 'date', '2014 - 2018');
+
+            updateSkillState(state.skills[0].id, 'JavaScript / TypeScript');
+            updateSkillState(state.skills[1].id, 'React & Next.js');
+            updateSkillState(state.skills[2].id, 'Node.js / Express');
+
+            updateCertState(state.certificates[0].id, 'name', 'AWS Certified Solutions Architect');
+            updateCertState(state.certificates[0].id, 'issuer', 'Amazon Web Services');
+            updateCertState(state.certificates[0].id, 'date', '2022');
+
+            renderResume();
+        });
+
+        // --- Design Controls ---
+        function updateLayout(layoutId) {
+            state.layout = layoutId;
+            document.querySelectorAll('.layout-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-layout-${layoutId}`).classList.add('active');
+            renderResume();
+        }
+
+        function updateColor(colorCode) {
+            state.color = colorCode;
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderResume();
+        }
+
+        // --- Mobile View Switcher ---
+        function switchView(view) {
+            const editor = document.getElementById('editor-panel');
+            const preview = document.getElementById('preview-panel');
+            const btnEdit = document.getElementById('btn-edit');
+            const btnPreview = document.getElementById('btn-preview');
+
+            if (view === 'form') {
+                editor.classList.remove('hidden');
+                preview.classList.add('hidden');
+                
+                btnEdit.className = "flex-1 py-3 text-sm font-bold text-indigo-600 bg-indigo-50 rounded-xl border border-indigo-200 transition-all";
+                btnPreview.className = "flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-50 rounded-xl border border-transparent transition-all";
+            } else {
+                editor.classList.add('hidden');
+                preview.classList.remove('hidden');
+                preview.classList.add('flex');
+
+                btnPreview.className = "flex-1 py-3 text-sm font-bold text-indigo-600 bg-indigo-50 rounded-xl border border-indigo-200 transition-all";
+                btnEdit.className = "flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-50 rounded-xl border border-transparent transition-all";
+            }
+        }
+
+        // --- Dynamic Form Array Management ---
+        function generateId() { return Math.random().toString(36).substr(2, 9); }
+
+        // Experience
+        function addExperience() {
+            const id = generateId();
+            state.experience.push({ id, title: '', company: '', date: '', desc: '' });
+            const html = `
+                <div id="exp-edit-${id}" class="relative bg-gray-50 p-4 rounded-xl border border-gray-200 group">
+                    <button onclick="removeExperience('${id}')" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors" title="Remove"><i class="fa-solid fa-trash-can"></i></button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 pr-6">
+                        <div>
+                            <input type="text" class="form-input text-sm py-2" placeholder="Job Title" value="${state.experience.find(e=>e.id===id).title}" oninput="updateExpState('${id}', 'title', this.value)">
+                        </div>
+                        <div>
+                            <input type="text" class="form-input text-sm py-2" placeholder="Company" value="${state.experience.find(e=>e.id===id).company}" oninput="updateExpState('${id}', 'company', this.value)">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <input type="text" class="form-input text-sm py-2" placeholder="Dates (e.g. Jan 2020 - Present)" value="${state.experience.find(e=>e.id===id).date}" oninput="updateExpState('${id}', 'date', this.value)">
+                        </div>
+                    </div>
+                    <textarea class="form-input text-sm py-2 resize-none" rows="3" placeholder="Key responsibilities and achievements..." oninput="updateExpState('${id}', 'desc', this.value)">${state.experience.find(e=>e.id===id).desc}</textarea>
+                </div>
+            `;
+            document.getElementById('experience-list').insertAdjacentHTML('beforeend', html);
+        }
+        function updateExpState(id, field, value) { state.experience.find(e => e.id === id)[field] = value; renderResume(); }
+        function removeExperience(id) { state.experience = state.experience.filter(e => e.id !== id); document.getElementById(`exp-edit-${id}`).remove(); renderResume(); }
+
+        // Education
+        function addEducation() {
+            const id = generateId();
+            state.education.push({ id, degree: '', school: '', date: '' });
+            const html = `
+                <div id="edu-edit-${id}" class="relative bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <button onclick="removeEducation('${id}')" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors" title="Remove"><i class="fa-solid fa-trash-can"></i></button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-6">
+                        <div class="sm:col-span-2">
+                            <input type="text" class="form-input text-sm py-2" placeholder="Degree / Program" oninput="updateEduState('${id}', 'degree', this.value)">
+                        </div>
+                        <div>
+                            <input type="text" class="form-input text-sm py-2" placeholder="School / University" oninput="updateEduState('${id}', 'school', this.value)">
+                        </div>
+                        <div>
+                            <input type="text" class="form-input text-sm py-2" placeholder="Year" oninput="updateEduState('${id}', 'date', this.value)">
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('education-list').insertAdjacentHTML('beforeend', html);
+        }
+        function updateEduState(id, field, value) { state.education.find(e => e.id === id)[field] = value; renderResume(); }
+        function removeEducation(id) { state.education = state.education.filter(e => e.id !== id); document.getElementById(`edu-edit-${id}`).remove(); renderResume(); }
+
+        // Skills
+        function addSkill() {
+            const id = generateId();
+            state.skills.push({ id, name: '' });
+            const html = `
+                <div id="skill-edit-${id}" class="flex items-center gap-2">
+                    <input type="text" class="form-input text-sm py-2 flex-1" placeholder="Skill (e.g. Project Management)" oninput="updateSkillState('${id}', this.value)">
+                    <button onclick="removeSkill('${id}')" class="text-gray-400 hover:text-red-500 p-2 shrink-0"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            `;
+            document.getElementById('skills-list').insertAdjacentHTML('beforeend', html);
+        }
+        function updateSkillState(id, value) { state.skills.find(s => s.id === id).name = value; renderResume(); }
+        function removeSkill(id) { state.skills = state.skills.filter(s => s.id !== id); document.getElementById(`skill-edit-${id}`).remove(); renderResume(); }
+
+        // Certificates
+        function addCertificate() {
+            const id = generateId();
+            state.certificates.push({ id, name: '', issuer: '', date: '' });
+            const html = `
+                <div id="cert-edit-${id}" class="relative bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <button onclick="removeCertificate('${id}')" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors" title="Remove"><i class="fa-solid fa-trash-can"></i></button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-6">
+                        <div class="sm:col-span-2">
+                            <input type="text" class="form-input text-sm py-2" placeholder="Certificate Name" oninput="updateCertState('${id}', 'name', this.value)">
+                        </div>
+                        <div>
+                            <input type="text" class="form-input text-sm py-2" placeholder="Issuer" oninput="updateCertState('${id}', 'issuer', this.value)">
+                        </div>
+                        <div>
+                            <input type="text" class="form-input text-sm py-2" placeholder="Date" oninput="updateCertState('${id}', 'date', this.value)">
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('certificates-list').insertAdjacentHTML('beforeend', html);
+        }
+        function updateCertState(id, field, value) { state.certificates.find(c => c.id === id)[field] = value; renderResume(); }
+        function removeCertificate(id) { state.certificates = state.certificates.filter(c => c.id !== id); document.getElementById(`cert-edit-${id}`).remove(); renderResume(); }
+
+        // --- Core Rendering Engine ---
+        function renderResume() {
+            // 1. Gather all data
+            const data = {
+                name: document.getElementById('inp-name').value || 'Your Name',
+                title: document.getElementById('inp-title').value || 'Professional Title',
+                email: document.getElementById('inp-email').value,
+                phone: document.getElementById('inp-phone').value,
+                location: document.getElementById('inp-location').value,
+                linkedin: document.getElementById('inp-linkedin').value,
+                website: document.getElementById('inp-website').value,
+                summary: document.getElementById('inp-summary').value,
+                experience: state.experience.filter(e => e.title || e.company),
+                education: state.education.filter(e => e.degree || e.school),
+                skills: state.skills.filter(s => s.name.trim() !== ''),
+                certificates: state.certificates.filter(c => c.name.trim() !== '')
+            };
+
+            // 2. Generate HTML based on selected layout
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = layouts[state.layout](data, state.color);
+        }
+
+        // --- Layout Template Definitions ---
+        const helpers = {
+            contactLine: (icon, text, style="") => text ? `<div class="flex items-center gap-2 ${style}"><i class="fa-solid fa-${icon} w-4 text-center"></i> <span>${text}</span></div>` : '',
+            expList: (experiences, color, bulletStyle="bg") => experiences.map(exp => {
+                const lines = exp.desc.split('\n').filter(l => l.trim());
+                const ul = lines.length ? `<ul class="mt-2 space-y-1 text-sm text-gray-600">${lines.map(l => `<li class="flex items-start"><span class="mr-2 text-[10px] mt-[4px]" ${bulletStyle === 'bg' ? `style="color: ${color}"` : 'text-gray-400'}>▶</span><span class="flex-1">${l}</span></li>`).join('')}</ul>` : '';
+                return `
+                    <div class="mb-5 relative">
+                        <div class="flex justify-between items-end mb-0.5">
+                            <h4 class="font-bold text-gray-800 text-[15px] leading-tight">${exp.title}</h4>
+                            <span class="text-xs text-gray-500 font-medium whitespace-nowrap ml-2">${exp.date}</span>
+                        </div>
+                        <div class="text-sm font-semibold" style="color: ${color}">${exp.company}</div>
+                        ${ul}
+                    </div>
+                `;
+            }).join(''),
+            eduList: (education, color) => education.map(edu => `
+                <div class="mb-3">
+                    <h4 class="font-bold text-gray-800 text-[14px] leading-tight">${edu.degree}</h4>
+                    <div class="flex justify-between items-center mt-0.5">
+                        <span class="text-sm text-gray-600">${edu.school}</span>
+                        <span class="text-xs text-gray-500">${edu.date}</span>
+                    </div>
+                </div>
+            `).join(''),
+            certList: (certs, color) => certs.map(cert => `
+                <div class="mb-3">
+                    <h4 class="font-bold text-gray-800 text-[14px] leading-tight flex items-center gap-1.5"><i class="fa-solid fa-award text-xs" style="color: ${color}"></i> ${cert.name}</h4>
+                    <div class="flex justify-between items-center mt-0.5 pl-4">
+                        <span class="text-xs text-gray-600">${cert.issuer}</span>
+                        <span class="text-xs text-gray-500">${cert.date}</span>
+                    </div>
+                </div>
+            `).join('')
+        };
+
+        const layouts = {
+            // 1. Classic Split
+            classic: (d, c) => `
+                <div class="flex flex-col h-full bg-white">
+                    <header class="px-10 py-10 text-white" style="background-color: ${c}">
+                        <h1 class="text-4xl font-bold uppercase tracking-wider mb-1">${d.name}</h1>
+                        <h2 class="text-lg font-light tracking-widest opacity-90 mb-6">${d.title}</h2>
+                        <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm opacity-90 font-medium">
+                            ${helpers.contactLine('envelope', d.email)}
+                            ${helpers.contactLine('phone', d.phone)}
+                            ${helpers.contactLine('location-dot', d.location)}
+                            ${helpers.contactLine('linkedin', d.linkedin.replace('linkedin.com/in/',''), 'fa-brands')}
+                            ${helpers.contactLine('globe', d.website)}
+                        </div>
+                    </header>
+                    <div class="flex-1 flex">
+                        <div class="w-2/3 p-10 border-r border-gray-100">
+                            ${d.summary ? `<div class="mb-8"><h3 class="text-sm font-bold uppercase tracking-widest mb-3 border-b-2 inline-block pb-1" style="border-color: ${c}; color: ${c}">Profile</h3><p class="text-sm text-gray-600 leading-relaxed text-justify">${d.summary}</p></div>` : ''}
+                            ${d.experience.length ? `<div class="mb-8"><h3 class="text-sm font-bold uppercase tracking-widest mb-4 border-b-2 inline-block pb-1" style="border-color: ${c}; color: ${c}">Experience</h3><div>${helpers.expList(d.experience, c)}</div></div>` : ''}
+                            ${d.education.length ? `<div><h3 class="text-sm font-bold uppercase tracking-widest mb-4 border-b-2 inline-block pb-1" style="border-color: ${c}; color: ${c}">Education</h3><div>${helpers.eduList(d.education, c)}</div></div>` : ''}
+                        </div>
+                        <div class="w-1/3 bg-gray-50 p-8">
+                            ${d.skills.length ? `<div class="mb-8"><h3 class="text-sm font-bold uppercase tracking-widest mb-4 border-b-2 inline-block pb-1" style="border-color: ${c}; color: ${c}">Expertise</h3><ul class="flex flex-col gap-2">${d.skills.map(s => `<li class="bg-white px-3 py-2 rounded text-xs text-gray-700 shadow-sm border-l-4 font-semibold" style="border-color: ${c}">${s.name}</li>`).join('')}</ul></div>` : ''}
+                            ${d.certificates.length ? `<div><h3 class="text-sm font-bold uppercase tracking-widest mb-4 border-b-2 inline-block pb-1" style="border-color: ${c}; color: ${c}">Certificates</h3><div>${helpers.certList(d.certificates, c)}</div></div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `,
+            
+            // 2. Executive Side
+            executive: (d, c) => `
+                <div class="flex flex-row h-full w-full bg-white">
+                    <div class="w-[35%] text-white p-8 flex flex-col" style="background-color: ${c}">
+                        <div class="mb-8">
+                            <h1 class="text-3xl font-bold uppercase mb-1 leading-tight tracking-wide">${d.name}</h1>
+                            <h2 class="text-md font-medium tracking-wider opacity-80">${d.title}</h2>
+                        </div>
+                        <div class="space-y-3 text-xs opacity-90 mb-10 font-medium tracking-wide">
+                            ${helpers.contactLine('envelope', d.email)}
+                            ${helpers.contactLine('phone', d.phone)}
+                            ${helpers.contactLine('location-dot', d.location)}
+                            ${helpers.contactLine('linkedin', d.linkedin.replace('linkedin.com/in/',''), 'fa-brands')}
+                            ${helpers.contactLine('globe', d.website)}
+                        </div>
+                        ${d.skills.length ? `
+                        <div class="mb-10">
+                            <h3 class="text-sm font-bold uppercase tracking-widest mb-4 border-b border-white/30 pb-2">Skills</h3>
+                            <div class="flex flex-wrap gap-2">
+                                ${d.skills.map(s => `<span class="bg-black/10 border border-white/20 px-2.5 py-1 rounded text-xs font-semibold tracking-wide">${s.name}</span>`).join('')}
+                            </div>
+                        </div>` : ''}
+                        ${d.certificates.length ? `
+                        <div>
+                            <h3 class="text-sm font-bold uppercase tracking-widest mb-4 border-b border-white/30 pb-2">Certifications</h3>
+                            <div class="space-y-3">
+                                ${d.certificates.map(cert => `<div class="text-xs">
+                                    <div class="font-bold mb-0.5 flex items-center gap-1"><i class="fa-solid fa-certificate"></i> ${cert.name}</div>
+                                    <div class="opacity-80">${cert.issuer} • ${cert.date}</div>
+                                </div>`).join('')}
+                            </div>
+                        </div>` : ''}
+                    </div>
+                    <div class="w-[65%] p-10 text-gray-800 flex flex-col">
+                        ${d.summary ? `<div class="mb-8"><h3 class="text-lg font-bold uppercase tracking-widest mb-3" style="color: ${c}">Profile Summary</h3><p class="text-sm text-gray-600 leading-relaxed text-justify">${d.summary}</p></div>` : ''}
+                        ${d.experience.length ? `<div class="mb-8"><h3 class="text-lg font-bold uppercase tracking-widest mb-4" style="color: ${c}">Professional Experience</h3><div>${helpers.expList(d.experience, c)}</div></div>` : ''}
+                        ${d.education.length ? `<div><h3 class="text-lg font-bold uppercase tracking-widest mb-4" style="color: ${c}">Education</h3><div>${helpers.eduList(d.education, c)}</div></div>` : ''}
+                    </div>
+                </div>
+            `,
+
+            // 3. Minimalist
+            minimalist: (d, c) => `
+                <div class="h-full bg-white p-12">
+                    <header class="border-b-2 border-gray-800 pb-6 mb-8 text-center">
+                        <h1 class="text-5xl font-black uppercase tracking-tight text-gray-900 mb-2">${d.name}</h1>
+                        <h2 class="text-xl font-medium tracking-widest text-gray-500 mb-4 uppercase">${d.title}</h2>
+                        <div class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            ${d.email ? `<span>${d.email}</span>` : ''}
+                            ${d.phone ? `<span>• ${d.phone}</span>` : ''}
+                            ${d.location ? `<span>• ${d.location}</span>` : ''}
+                            ${d.linkedin ? `<span>• ${d.linkedin.replace('linkedin.com/in/','')}</span>` : ''}
+                        </div>
+                    </header>
+                    <div class="flex gap-10">
+                        <div class="w-[65%]">
+                            ${d.summary ? `<div class="mb-8"><h3 class="text-sm font-bold uppercase tracking-widest mb-3 text-gray-800">Summary</h3><p class="text-sm text-gray-600 leading-relaxed">${d.summary}</p></div>` : ''}
+                            ${d.experience.length ? `<div class="mb-8"><h3 class="text-sm font-bold uppercase tracking-widest mb-4 text-gray-800">Experience</h3><div>${helpers.expList(d.experience, c, 'dark')}</div></div>` : ''}
+                        </div>
+                        <div class="w-[35%]">
+                            ${d.education.length ? `<div class="mb-8"><h3 class="text-sm font-bold uppercase tracking-widest mb-4 text-gray-800">Education</h3><div>${helpers.eduList(d.education, c)}</div></div>` : ''}
+                            ${d.skills.length ? `<div class="mb-8"><h3 class="text-sm font-bold uppercase tracking-widest mb-3 text-gray-800">Skills</h3><div class="flex flex-col gap-1.5">${d.skills.map(s => `<span class="text-sm text-gray-700 font-medium pb-1 border-b border-gray-100">${s.name}</span>`).join('')}</div></div>` : ''}
+                            ${d.certificates.length ? `<div><h3 class="text-sm font-bold uppercase tracking-widest mb-4 text-gray-800">Certificates</h3><div>${helpers.certList(d.certificates, '#1f2937')}</div></div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `,
+
+            // 4. Creative Edge
+            creative: (d, c) => `
+                <div class="h-full bg-white flex">
+                    <div class="w-4 h-full" style="background-color: ${c}"></div>
+                    <div class="flex-1 p-10 pl-8">
+                        <header class="mb-10">
+                            <h1 class="text-5xl font-extrabold uppercase tracking-tighter mb-1 text-gray-900">${d.name}</h1>
+                            <h2 class="text-xl font-bold tracking-widest mb-4" style="color: ${c}">${d.title}</h2>
+                            <div class="flex flex-wrap gap-4 text-xs font-semibold text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                ${helpers.contactLine('envelope', d.email)}
+                                ${helpers.contactLine('phone', d.phone)}
+                                ${helpers.contactLine('location-dot', d.location)}
+                                ${helpers.contactLine('linkedin', d.linkedin.replace('linkedin.com/in/',''), 'fa-brands')}
+                            </div>
+                        </header>
+                        
+                        ${d.summary ? `<div class="mb-8 p-4 rounded-xl" style="background-color: ${c}10; border-left: 4px solid ${c}"><p class="text-sm text-gray-700 font-medium leading-relaxed">${d.summary}</p></div>` : ''}
+                        
+                        <div class="flex gap-8">
+                            <div class="w-[60%] border-r border-gray-100 pr-8">
+                                ${d.experience.length ? `<div class="mb-8"><h3 class="text-sm font-bold uppercase tracking-widest mb-5 flex items-center gap-2 text-gray-800"><div class="w-6 h-[2px]" style="background-color: ${c}"></div> Experience</h3><div class="space-y-6">${helpers.expList(d.experience, c)}</div></div>` : ''}
+                                ${d.education.length ? `<div><h3 class="text-sm font-bold uppercase tracking-widest mb-5 flex items-center gap-2 text-gray-800"><div class="w-6 h-[2px]" style="background-color: ${c}"></div> Education</h3><div>${helpers.eduList(d.education, c)}</div></div>` : ''}
+                            </div>
+                            <div class="w-[40%]">
+                                ${d.skills.length ? `<div class="mb-8"><h3 class="text-sm font-bold uppercase tracking-widest mb-5 flex items-center gap-2 text-gray-800"><div class="w-6 h-[2px]" style="background-color: ${c}"></div> Skills</h3><div class="flex flex-wrap gap-2">${d.skills.map(s => `<span class="px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm" style="background-color: ${c}">${s.name}</span>`).join('')}</div></div>` : ''}
+                                ${d.certificates.length ? `<div><h3 class="text-sm font-bold uppercase tracking-widest mb-5 flex items-center gap-2 text-gray-800"><div class="w-6 h-[2px]" style="background-color: ${c}"></div> Certifications</h3><div>${helpers.certList(d.certificates, c)}</div></div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+
+            // 5. Elegant Centered
+            elegant: (d, c) => `
+                <div class="h-full bg-[#fdfbf7] p-12 font-serif text-gray-800">
+                    <header class="text-center mb-10 pb-6 border-b border-gray-300 relative">
+                        <h1 class="text-4xl font-bold uppercase tracking-widest mb-3" style="color: ${c}">${d.name}</h1>
+                        <h2 class="text-lg italic tracking-wider text-gray-600 mb-5">${d.title}</h2>
+                        <div class="flex justify-center gap-4 text-xs font-sans text-gray-500 uppercase tracking-widest">
+                            ${d.email ? `<span>${d.email}</span>` : ''}
+                            ${d.phone ? `<span>| ${d.phone}</span>` : ''}
+                            ${d.location ? `<span>| ${d.location}</span>` : ''}
+                        </div>
+                        <div class="absolute bottom-[-3px] left-[50%] ml-[-15px] w-[30px] h-[5px] bg-white border-x border-gray-300"></div>
+                    </header>
+                    
+                    <div class="max-w-[85%] mx-auto font-sans">
+                        ${d.summary ? `<div class="mb-10 text-center"><p class="text-[13px] text-gray-600 leading-relaxed italic">"${d.summary}"</p></div>` : ''}
+                        
+                        ${d.experience.length ? `<div class="mb-8"><h3 class="text-center text-sm font-bold uppercase tracking-[0.3em] mb-6 text-gray-800 font-serif">Experience</h3><div class="space-y-6">${helpers.expList(d.experience, c)}</div></div>` : ''}
+                        
+                        ${d.education.length ? `<div class="mb-8"><h3 class="text-center text-sm font-bold uppercase tracking-[0.3em] mb-6 text-gray-800 font-serif border-t border-gray-200 pt-8">Education</h3><div>${helpers.eduList(d.education, c)}</div></div>` : ''}
+
+                        ${d.skills.length ? `<div class="mb-8"><h3 class="text-center text-sm font-bold uppercase tracking-[0.3em] mb-5 text-gray-800 font-serif border-t border-gray-200 pt-8">Skills & Core Competencies</h3><p class="text-center text-[13px] text-gray-600 leading-relaxed">${d.skills.map(s => s.name).join(' <span class="mx-2 text-gray-300">•</span> ')}</p></div>` : ''}
+                    </div>
+                </div>
+            `
+        };
+
+        // --- PDF Export Logic ---
+        function downloadPDF() {
+            const element = document.getElementById('print-area');
+            const name = document.getElementById('inp-name').value || 'Resume';
+            const fileName = `${name.replace(/\s+/g, '_')}_ProResume.pdf`;
+
+            const btn = document.querySelector('button[onclick="downloadPDF()"]');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Rendering...';
+            btn.disabled = true;
+
+            // PDF Generation Options (High Quality A4)
+            const opt = {
+                margin:       0,
+                filename:     fileName,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Force exact A4 dimensions temporarily for perfect export
+            element.style.transform = 'none';
+            element.style.width = '210mm';
+            element.style.height = '297mm';
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                element.style.transform = '';
+                element.style.width = '';
+                element.style.height = '';
+            });
+        }
+    </script>
+</body>
+</html>
